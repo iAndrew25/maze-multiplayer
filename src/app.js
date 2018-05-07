@@ -3,30 +3,28 @@ import {isCollision, getIndex, drawPlayer} from './commons/utils';
 import socketSubscribe from './commons/socket-subscribe';
 import socket from './commons/socket';
 
-let players = [{
-	tile: 2,
-	x: 1,
-	y: 1
-}],
-	currentPlayer = {
-	tile: 2,
-	x: 1,
-	y: 1
-};
+
+let currentPlayer,
+	players,
+	ctx,
+	cvs,
+	img;
+
+const gameWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+	gameHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+const clearScreen = () => ctx.clearRect(0, 0, cvs.width, cvs.height);
 
 const sw = socket.getInstance(),
-	updatePlayers = users => {
-		console.log("users", users);
-		players = users;
-	},
+	updatePlayers = users => players = users,
 	updatePlayerUser = user => currentPlayer = user;
 
 socketSubscribe.subscribe('app.js', {
-	GET_PLAYERS: users => updatePlayers(users),
-	NEW_PLAYER: users => updatePlayers(users),
-	PLAYER_MOVE: users => updatePlayers(users),
-	PLAYER_LEFT: users => updatePlayers(users),
-	GET_ME: user => updatePlayerUser(user),
+	GET_PLAYERS: updatePlayers,
+	NEW_PLAYER: updatePlayers,
+	PLAYER_MOVE: updatePlayers,
+	PLAYER_LEFT: updatePlayers,
+	GET_ME: updatePlayerUser
 });
 
 function drawPlayers(i, j, mapX, mapY) {
@@ -36,15 +34,6 @@ function drawPlayers(i, j, mapX, mapY) {
 		}
 	});
 }
-
-let ctx,
-	cvs,
-	img;
-
-const gameWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-	gameHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-
-
 
 window.addEventListener('load', () => {
 	cvs = document.getElementById('game');
@@ -61,9 +50,6 @@ window.addEventListener('load', () => {
 		update();
 	}	
 });	
-
-
-const clearScreen = () => ctx.clearRect(0, 0, cvs.width, cvs.height);
 
 function update() {
 	clearScreen();
@@ -94,7 +80,6 @@ function drawMap() {
 				w,
 				h
 			);
-
 			
 			drawPlayers(i, j, mapX, mapY);
 		}
@@ -102,23 +87,22 @@ function drawMap() {
 }
 
 document.addEventListener('keypress', ({keyCode, charCode, which}) => {
-	const keyPressed = keyCode || charCode || which;
+	let keyPressed = keyCode || charCode || which,
+		moved = false;
 
 	if(keyPressed === 97 && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
 		currentPlayer.x -= 1;
-		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	}
-	if(keyPressed === 100 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
+		moved = true;
+	} else if(keyPressed === 100 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
 		currentPlayer.x += 1;
-		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	}
-	if(keyPressed === 115 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
+		moved = true;
+	} else if(keyPressed === 115 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
 		currentPlayer.y += 1;
-		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	}
-	if(keyPressed === 119 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
+		moved = true;
+	} else if(keyPressed === 119 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
 		currentPlayer.y -= 1;
-		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
+		moved = true;
 	}
-	
+
+	moved && sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 });
