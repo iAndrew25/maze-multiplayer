@@ -40,7 +40,7 @@ wss.on('connection', (ws, req) => {
 	players.push(newPlayer);
 
 	noticeCurrentClient({type: 'GET_ME', payload: newPlayer});
-	noticeAllClients({type: 'NEW_PLAYER', payload: players});
+	noticeAllClients({type: 'GET_PLAYERS', payload: players});
 
 	ws.on('error', err => {
 		if (err.code !== 'ECONNRESET') {
@@ -52,7 +52,7 @@ wss.on('connection', (ws, req) => {
 		delete clients[ws.id];
 		players = players.filter(player => player.id !== ws.id);
 		
-		noticeAllClients({type: 'PLAYER_LEFT', payload: players});
+		noticeAllClients({type: 'GET_PLAYERS', payload: players});
 	});
 
 	ws.on('message', message => {
@@ -67,7 +67,15 @@ wss.on('connection', (ws, req) => {
 					return player;
 				})
 
-				noticeAllClients({type: 'PLAYER_MOVE', payload: players});
+				noticeAllClients({type: 'GET_PLAYERS', payload: players});
+				break;
+			case 'RESET_PLAYERS':
+				players.forEach(player => {
+					player.x = 1;
+					player.y = 1;
+				});
+
+				noticeAllClients({type: 'GET_PLAYERS', payload: players});
 				break;
 			default:
 		}

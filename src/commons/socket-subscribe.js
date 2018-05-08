@@ -13,8 +13,6 @@ sw.onmessage = ({data}) => {
 			Object.keys(msgType).forEach(item => msgType[item](parsedData.payload));
 		}
 	}
-
-	console.log('Socket type -', parsedData.type);
 }
 
 const subscribe = (id, options = {}) => {

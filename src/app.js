@@ -1,8 +1,7 @@
 import {MAP, MAP_WIDTH, MAP_HEIGHT, TILE_HEIGHT, TILE_WIDTH, TILES} from './commons/constants';
-import {isCollision, getIndex, drawPlayer} from './commons/utils';
+import {isCollision, isGoal, getIndex, drawPlayer} from './commons/utils';
 import socketSubscribe from './commons/socket-subscribe';
 import socket from './commons/socket';
-
 
 let currentPlayer,
 	players,
@@ -16,14 +15,14 @@ const gameWidth = window.innerWidth || document.documentElement.clientWidth || d
 const clearScreen = () => ctx.clearRect(0, 0, cvs.width, cvs.height);
 
 const sw = socket.getInstance(),
-	updatePlayers = users => players = users,
-	updatePlayerUser = user => currentPlayer = user;
+	updatePlayerUser = user => currentPlayer = user,
+	updatePlayers = users => {
+		currentPlayer = users.find(player => currentPlayer.id === player.id);
+		players = users;
+	};
 
 socketSubscribe.subscribe('app.js', {
 	GET_PLAYERS: updatePlayers,
-	NEW_PLAYER: updatePlayers,
-	PLAYER_MOVE: updatePlayers,
-	PLAYER_LEFT: updatePlayers,
 	GET_ME: updatePlayerUser
 });
 
@@ -65,7 +64,7 @@ function drawMap() {
 				mapY = (i + j) * TILE_WIDTH / 4 + gameHeight / 4,
 				{type, x, y, w, h} = TILES[MAP[getIndex(i, j)]];
 
-			if(type === 'mountain') {
+			if(type === 'wall') {
 				mapY -= 10;
 			}
 
@@ -86,22 +85,27 @@ function drawMap() {
 	}
 }
 
-document.addEventListener('keypress', ({keyCode, charCode, which}) => {
-	let keyPressed = keyCode || charCode || which,
+document.addEventListener('keydown', ({keyCode, charCode, which}) => {
+	let keyPressed = keyCode || which,
 		moved = false;
 
-	if(keyPressed === 97 && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
+	if(keyPressed === 37 && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
 		currentPlayer.x -= 1;
 		moved = true;
-	} else if(keyPressed === 100 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
+	} else if(keyPressed === 39 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
 		currentPlayer.x += 1;
 		moved = true;
-	} else if(keyPressed === 115 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
+	} else if(keyPressed === 40 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
 		currentPlayer.y += 1;
 		moved = true;
-	} else if(keyPressed === 119 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
+	} else if(keyPressed === 38 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
 		currentPlayer.y -= 1;
 		moved = true;
+	}
+
+	if(isGoal(currentPlayer.x, currentPlayer.y)) {
+		sw.send(JSON.stringify({type:'RESET_PLAYERS'}));
+		return;
 	}
 
 	moved && sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
