@@ -4,7 +4,7 @@ const express = require('express');
 	path = require('path');
 
 const app = express(),
-	port = 8082,
+	port = 8000,
 	server = http.createServer(app),
 	wss = new WebSocket.Server({ server });
 
@@ -13,43 +13,24 @@ const generatePlayer = require('./player');
 app.use(express.static(path.join(__dirname + '/../')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname + '/../index.html')));
 
-let noticeAllClients = () => {},
-	noticeCurrentClient = () => {},
-	clients = {},
-	players = [],
-	newPlayer;
-
-wss.on('connection', (ws, req) => {
-	noticeCurrentClient = message => {
-		ws.send(JSON.stringify(message));
-	}
-
+let players = [],
 	noticeAllClients = message => {
 		wss.clients.forEach(client => {
 			if(client.readyState === WebSocket.OPEN) {
 				client.send(JSON.stringify(message));
 			}
 		})
-	}
+	};
 
-	newPlayer = generatePlayer();
-
+wss.on('connection', (ws, req) => {
+	let newPlayer = generatePlayer();
 	ws.id = newPlayer.id;
-	clients[newPlayer.id] = ws;
-
 	players.push(newPlayer);
 
-	noticeCurrentClient({type: 'GET_ME', payload: newPlayer});
+	ws.send(JSON.stringify({type: 'GET_ME', payload: newPlayer}));
 	noticeAllClients({type: 'GET_PLAYERS', payload: players});
 
-	ws.on('error', err => {
-		if (err.code !== 'ECONNRESET') {
-			throw err
-		}
-	});
-
 	ws.on('close', function close() {
-		delete clients[ws.id];
 		players = players.filter(player => player.id !== ws.id);
 		
 		noticeAllClients({type: 'GET_PLAYERS', payload: players});
@@ -65,14 +46,16 @@ wss.on('connection', (ws, req) => {
 						player = parsedData.payload;
 					}
 					return player;
-				})
+				});
 
 				noticeAllClients({type: 'GET_PLAYERS', payload: players});
 				break;
 			case 'RESET_PLAYERS':
-				players.forEach(player => {
+				players = players.map(player => {
 					player.x = 1;
 					player.y = 1;
+
+					return player;
 				});
 
 				noticeAllClients({type: 'GET_PLAYERS', payload: players});

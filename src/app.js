@@ -86,27 +86,24 @@ function drawMap() {
 }
 
 document.addEventListener('keydown', ({keyCode, charCode, which}) => {
-	let keyPressed = keyCode || which,
-		moved = false;
+	let keyPressed = keyCode || which;
 
 	if(keyPressed === 37 && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
 		currentPlayer.x -= 1;
-		moved = true;
+		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 	} else if(keyPressed === 39 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
 		currentPlayer.x += 1;
-		moved = true;
+		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 	} else if(keyPressed === 40 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
 		currentPlayer.y += 1;
-		moved = true;
+		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 	} else if(keyPressed === 38 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
 		currentPlayer.y -= 1;
-		moved = true;
+		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 	}
 
 	if(isGoal(currentPlayer.x, currentPlayer.y)) {
 		sw.send(JSON.stringify({type:'RESET_PLAYERS'}));
 		return;
 	}
-
-	moved && sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 });
