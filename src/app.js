@@ -1,4 +1,4 @@
-import {MAP, MAP_WIDTH, MAP_HEIGHT, TILE_HEIGHT, TILE_WIDTH, TILES} from './commons/constants';
+import {MAP, MAP_WIDTH, MAP_HEIGHT, TILE_HEIGHT, TILE_WIDTH, TILES, KEYS} from './commons/constants';
 import {isCollision, isGoal, getIndex, drawPlayer} from './commons/utils';
 import socketSubscribe from './commons/socket-subscribe';
 import socket from './commons/socket';
@@ -85,19 +85,19 @@ function drawMap() {
 	}
 }
 
-document.addEventListener('keydown', ({keyCode, charCode, which}) => {
+document.addEventListener('keydown', ({keyCode, which}) => {
 	let keyPressed = keyCode || which;
 
-	if(keyPressed === 37 && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
+	if(keyPressed === KEYS.LEFT && !isCollision(currentPlayer.x - 1, currentPlayer.y)) {
 		currentPlayer.x -= 1;
 		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	} else if(keyPressed === 39 && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
+	} else if(keyPressed === KEYS.RIGHT && !isCollision(currentPlayer.x + 1, currentPlayer.y)) {
 		currentPlayer.x += 1;
 		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	} else if(keyPressed === 40 && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
+	} else if(keyPressed === KEYS.BOTTOM && !isCollision(currentPlayer.x, currentPlayer.y + 1)) {
 		currentPlayer.y += 1;
 		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
-	} else if(keyPressed === 38 && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
+	} else if(keyPressed === KEYS.TOP && !isCollision(currentPlayer.x, currentPlayer.y - 1)) {
 		currentPlayer.y -= 1;
 		sw.send(JSON.stringify({type:'PLAYER_MOVE', payload: currentPlayer}));
 	}
